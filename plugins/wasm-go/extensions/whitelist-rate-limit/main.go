@@ -25,7 +25,7 @@ import (
 
 func main() {
 	wrapper.SetCtx(
-		"cluster-key-rate-limit",
+		"whitelist-rate-limit",
 		wrapper.ParseConfigBy(parseConfig),
 		wrapper.ProcessRequestHeadersBy(onHttpRequestHeaders),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
