@@ -87,17 +87,13 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCo
 }
 
 func checkRequestAgainstLimitRule(ctx wrapper.HttpContext, whitelist []WhitelistItem, log wrapper.Log) (string, bool) {
-	val, err := proxywasm.GetHttpRequestHeader("x-envoy-original-host")
-	if err != nil {
-		log.Errorf("failed to get request host header: %v", err)
-		return "", false
-	}
+	host := ctx.Host()
 	for _, rule := range whitelist {
-		if rule.regexp.MatchString(val) {
-			return val, true
+		if rule.regexp.MatchString(host) {
+			return host, true
 		}
 	}
-	return val, false
+	return host, false
 }
 
 func rejected(config ClusterKeyRateLimitConfig, context LimitContext) {
