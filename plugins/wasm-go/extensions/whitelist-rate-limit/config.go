@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alibaba/higress/plugins/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 	re "github.com/wasilibs/go-re2"
 )
@@ -27,8 +28,8 @@ type WhitelistItem struct {
 	regexp *re.Regexp
 }
 
-func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterKeyRateLimitConfig) error {
-	err := initWhitelist(json, config)
+func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterKeyRateLimitConfig, log wrapper.Log) error {
+	err := initWhitelist(json, config, log)
 	if err != nil {
 		return err
 	}
@@ -52,10 +53,8 @@ func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterKeyRateLim
 	}
 
 	toekns := json.Get("qps")
-	if toekns.Exists() {
-		config.store.tokens = uint64(toekns.Uint())
-	} else {
-		return errors.New("missing qps in config")
+	if !toekns.Exists() || toekns.Uint() == 0 {
+		return errors.New("qps must be greater than 0")
 	}
 
 	config.store = newStore(
@@ -65,9 +64,10 @@ func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterKeyRateLim
 	return nil
 }
 
-func initWhitelist(json gjson.Result, config *ClusterKeyRateLimitConfig) error {
+func initWhitelist(json gjson.Result, config *ClusterKeyRateLimitConfig, log wrapper.Log) error {
 	whitelist := json.Get("whitelist")
-	if len(whitelist.Array()) == 0 {
+	if !whitelist.Exists() && len(whitelist.Array()) == 0 {
+		log.Warn("no whitelist rule found, all requests will be rejected")
 		return nil
 	}
 	var ruleItems []WhitelistItem

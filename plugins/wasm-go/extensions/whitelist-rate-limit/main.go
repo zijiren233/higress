@@ -47,7 +47,7 @@ type LimitContext struct {
 }
 
 func parseConfig(json gjson.Result, config *ClusterKeyRateLimitConfig, log wrapper.Log) error {
-	return parseClusterKeyRateLimitConfig(json, config)
+	return parseClusterKeyRateLimitConfig(json, config, log)
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitConfig, log wrapper.Log) types.Action {
