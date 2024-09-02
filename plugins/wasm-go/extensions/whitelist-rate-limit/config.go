@@ -19,7 +19,7 @@ type ClusterKeyRateLimitConfig struct {
 	wihitlist            []WhitelistItem // 限流规则项
 	rejectedCode         uint32          // 当请求超过阈值被拒绝时,返回的HTTP状态码
 	rejectedMsg          string          // 当请求超过阈值被拒绝时,返回的响应体
-	store                *lruBucket
+	store                *store
 }
 
 type WhitelistItem struct {
