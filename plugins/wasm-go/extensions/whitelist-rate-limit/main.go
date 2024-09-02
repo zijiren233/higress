@@ -53,7 +53,7 @@ func parseConfig(json gjson.Result, config *ClusterKeyRateLimitConfig, log wrapp
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitConfig, log wrapper.Log) types.Action {
 	// 判断是否命中限流规则
 	val, ok := checkRequestAgainstLimitRule(ctx, config.wihitlist, log)
-	if ok {
+	if ok || val == "" {
 		return types.ActionContinue
 	}
 
@@ -67,11 +67,12 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCon
 	if !ok {
 		// 触发限流
 		rejected(config, context)
-	} else {
-		ctx.SetContext(LimitContextKey, context)
-		proxywasm.ResumeHttpRequest()
+		return types.ActionPause
 	}
-	return types.ActionPause
+
+	ctx.SetContext(LimitContextKey, context)
+	proxywasm.ResumeHttpRequest()
+	return types.ActionContinue
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitConfig, log wrapper.Log) types.Action {
@@ -89,6 +90,7 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCo
 func checkRequestAgainstLimitRule(ctx wrapper.HttpContext, whitelist []WhitelistItem, log wrapper.Log) (string, bool) {
 	val, err := proxywasm.GetHttpRequestHeader("Host")
 	if err != nil {
+		log.Errorf("failed to get request host header: %v", err)
 		return "", false
 	}
 	for _, rule := range whitelist {
