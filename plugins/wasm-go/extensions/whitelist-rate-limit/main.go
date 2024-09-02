@@ -71,7 +71,6 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCon
 	}
 
 	ctx.SetContext(LimitContextKey, context)
-	proxywasm.ResumeHttpRequest()
 	return types.ActionContinue
 }
 
@@ -88,7 +87,7 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCo
 }
 
 func checkRequestAgainstLimitRule(ctx wrapper.HttpContext, whitelist []WhitelistItem, log wrapper.Log) (string, bool) {
-	val, err := proxywasm.GetHttpRequestHeader("Host")
+	val, err := proxywasm.GetHttpRequestHeader("x-envoy-original-host")
 	if err != nil {
 		log.Errorf("failed to get request host header: %v", err)
 		return "", false

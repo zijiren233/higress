@@ -71,7 +71,7 @@ func (s *store) Take(key string) (uint64, uint64, uint64, bool) {
 		return b.take(s.tokens)
 	}
 
-	b := newBucket(s.tokens, s.interval)
+	b := newBucket(key, s.tokens, s.interval)
 	elem := s.lruList.PushFront(b)
 	s.data[key] = elem
 
@@ -94,8 +94,9 @@ type bucket struct {
 	lock            sync.Mutex
 }
 
-func newBucket(tokens uint64, interval time.Duration) *bucket {
+func newBucket(key string, tokens uint64, interval time.Duration) *bucket {
 	b := &bucket{
+		key:             key,
 		startTime:       uint64(time.Now().UnixNano()),
 		availableTokens: tokens,
 		interval:        interval,
