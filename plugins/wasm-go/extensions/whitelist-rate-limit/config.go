@@ -84,7 +84,7 @@ func initWhitelist(json gjson.Result, config *ClusterKeyRateLimitConfig, log wra
 			}
 
 			config.whitelistReg = append(config.whitelistReg, WhitelistRegItem{
-				key:    itemKey,
+				key:    regexpStr,
 				regexp: regexp,
 			})
 			continue
