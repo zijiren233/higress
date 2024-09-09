@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/pkg/wrapper"
@@ -16,14 +17,15 @@ const (
 )
 
 type ClusterKeyRateLimitConfig struct {
-	showLimitQuotaHeader bool            // 响应头中是否显示X-RateLimit-Limit和X-RateLimit-Remaining
-	wihitlist            []WhitelistItem // 限流规则项
-	rejectedCode         uint32          // 当请求超过阈值被拒绝时,返回的HTTP状态码
-	rejectedMsg          string          // 当请求超过阈值被拒绝时,返回的响应体
+	showLimitQuotaHeader bool               // 响应头中是否显示X-RateLimit-Limit和X-RateLimit-Remaining
+	whitelistReg         []WhitelistRegItem // 限流规则项
+	rawWhitlistMap       map[string]struct{}
+	rejectedCode         uint32 // 当请求超过阈值被拒绝时,返回的HTTP状态码
+	rejectedMsg          string // 当请求超过阈值被拒绝时,返回的响应体
 	store                *store
 }
 
-type WhitelistItem struct {
+type WhitelistRegItem struct {
 	key    string
 	regexp *re.Regexp
 }
@@ -70,23 +72,24 @@ func initWhitelist(json gjson.Result, config *ClusterKeyRateLimitConfig, log wra
 		log.Warn("no whitelist rule found, all requests will be rejected")
 		return nil
 	}
-	var ruleItems []WhitelistItem
+	config.whitelistReg = make([]WhitelistRegItem, 0)
+	config.rawWhitlistMap = make(map[string]struct{})
 	for _, item := range whitelist.Array() {
 		itemKey := item.String()
-		var (
-			regexp *re.Regexp
-		)
-		var err error
-		regexp, err = re.Compile(itemKey)
-		if err != nil {
-			return fmt.Errorf("failed to compile regex for key '%s': %w", itemKey, err)
-		}
+		if strings.HasPrefix(itemKey, "regexp:") {
+			regexpStr := itemKey[len("regexp:"):]
+			regexp, err := re.Compile(regexpStr)
+			if err != nil {
+				return fmt.Errorf("failed to compile regex for key '%s': %w", itemKey, err)
+			}
 
-		ruleItems = append(ruleItems, WhitelistItem{
-			key:    itemKey,
-			regexp: regexp,
-		})
+			config.whitelistReg = append(config.whitelistReg, WhitelistRegItem{
+				key:    itemKey,
+				regexp: regexp,
+			})
+			continue
+		}
+		config.rawWhitlistMap[itemKey] = struct{}{}
 	}
-	config.wihitlist = ruleItems
 	return nil
 }

@@ -52,7 +52,7 @@ func parseConfig(json gjson.Result, config *ClusterKeyRateLimitConfig, log wrapp
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitConfig, log wrapper.Log) types.Action {
 	// 判断是否命中限流规则
-	val, ok := checkRequestAgainstLimitRule(ctx, config.wihitlist, log)
+	val, ok := checkRequestAgainstLimitRule(ctx, config.rawWhitlistMap, config.whitelistReg, log)
 	if ok || val == "" {
 		return types.ActionContinue
 	}
@@ -86,9 +86,12 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config ClusterKeyRateLimitCo
 	return types.ActionContinue
 }
 
-func checkRequestAgainstLimitRule(ctx wrapper.HttpContext, whitelist []WhitelistItem, log wrapper.Log) (string, bool) {
+func checkRequestAgainstLimitRule(ctx wrapper.HttpContext, rawWhitelist map[string]struct{}, whitelistReg []WhitelistRegItem, log wrapper.Log) (string, bool) {
 	host := ctx.Host()
-	for _, rule := range whitelist {
+	if _, ok := rawWhitelist[host]; ok {
+		return host, true
+	}
+	for _, rule := range whitelistReg {
 		if rule.regexp.MatchString(host) {
 			return host, true
 		}
