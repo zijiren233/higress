@@ -74,12 +74,14 @@ type LimitByPerIp struct {
 }
 
 type LimitConfigItem struct {
-	configType limitConfigItemType // 限流配置项key类型
-	key        string              // 限流key
-	ipNet      *iptree.IPTree      // 限流key转换的ip地址或者ip段,仅用于itemType为ipNetType
-	regexp     *re.Regexp          // 正则表达式,仅用于itemType为regexpType
-	count      int64               // 指定时间窗口内的总请求数量阈值
-	timeWindow int64               // 时间窗口大小
+	configType       limitConfigItemType // 限流配置项key类型
+	key              string              // 限流key
+	ipNet            *iptree.IPTree      // 限流key转换的ip地址或者ip段,仅用于itemType为ipNetType
+	regexp           *re.Regexp          // 正则表达式,仅用于itemType为regexpType
+	whitelist        map[string]struct{} // 白名单,仅用于itemType为whitelistType
+	whitelistRegexps []*re.Regexp        // 白名单正则表达式,仅用于itemType为whitelistType
+	count            int64               // 指定时间窗口内的总请求数量阈值
+	timeWindow       int64               // 时间窗口大小
 }
 
 func initRedisClusterClient(json gjson.Result, config *ClusterKeyRateLimitConfig) error {
@@ -275,7 +277,23 @@ func initConfigItems(json gjson.Result, rule *LimitRuleItem) error {
 			itemType = exactType
 		}
 
-		if configItem, err := createConfigItemFromRate(item, itemType, itemKey, ipNet, regexp); err != nil {
+		whitelist := map[string]struct{}{}
+		whitelistRegexps := []*re.Regexp{}
+		if item.Get("whitelist").Exists() {
+			for _, whitelistItem := range item.Get("whitelist").Array() {
+				if strings.HasPrefix(whitelistItem.String(), "regexp:") {
+					whitelistRegexp, err := re.Compile(whitelistItem.String()[len("regexp:"):])
+					if err != nil {
+						return fmt.Errorf("failed to compile whitelist regex for key '%s': %w", itemKey, err)
+					}
+					whitelistRegexps = append(whitelistRegexps, whitelistRegexp)
+				} else {
+					whitelist[whitelistItem.String()] = struct{}{}
+				}
+			}
+		}
+
+		if configItem, err := createConfigItemFromRate(item, itemType, itemKey, ipNet, regexp, whitelist, whitelistRegexps); err != nil {
 			return err
 		} else if configItem != nil {
 			configItems = append(configItems, *configItem)
@@ -285,17 +303,19 @@ func initConfigItems(json gjson.Result, rule *LimitRuleItem) error {
 	return nil
 }
 
-func createConfigItemFromRate(item gjson.Result, itemType limitConfigItemType, key string, ipNet *iptree.IPTree, regexp *re.Regexp) (*LimitConfigItem, error) {
+func createConfigItemFromRate(item gjson.Result, itemType limitConfigItemType, key string, ipNet *iptree.IPTree, regexp *re.Regexp, whitelist map[string]struct{}, whitelistRegexps []*re.Regexp) (*LimitConfigItem, error) {
 	for timeWindowKey, duration := range timeWindows {
 		q := item.Get(timeWindowKey)
 		if q.Exists() && q.Int() > 0 {
 			return &LimitConfigItem{
-				configType: itemType,
-				key:        key,
-				ipNet:      ipNet,
-				regexp:     regexp,
-				count:      q.Int(),
-				timeWindow: duration,
+				configType:       itemType,
+				key:              key,
+				ipNet:            ipNet,
+				regexp:           regexp,
+				whitelist:        whitelist,
+				whitelistRegexps: whitelistRegexps,
+				count:            q.Int(),
+				timeWindow:       duration,
 			}, nil
 		}
 	}

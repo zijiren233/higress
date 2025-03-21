@@ -203,6 +203,14 @@ func logDebugAndReturnEmpty(log wrapper.Log, errMsg string, args ...interface{})
 
 func findMatchingItem(limitType limitRuleItemType, items []LimitConfigItem, key string) *LimitConfigItem {
 	for _, item := range items {
+		if _, ok := item.whitelist[key]; ok {
+			return nil
+		}
+		for _, whitelistRegexp := range item.whitelistRegexps {
+			if whitelistRegexp.MatchString(key) {
+				return nil
+			}
+		}
 		// per类型,检查allType和regexpType
 		if limitType == limitByPerHeaderType ||
 			limitType == limitByPerParamType ||
