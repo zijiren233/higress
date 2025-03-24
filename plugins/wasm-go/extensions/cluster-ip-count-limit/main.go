@@ -23,9 +23,9 @@ const (
 	local count = redis.call("SCARD", key)
 	if count < maxCount then
 		redis.call("SADD", key, ip)
-		if count == 0 {
+		if count == 0 then
 			redis.call("EXPIRE", key, window)
-		}
+		end
 		return 1
 	end
 
@@ -85,7 +85,6 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitCon
 
 	// 5. 执行限流检查
 	err = config.redisClient.Eval(CheckIPLimitScript, 1, keys, args, func(response resp.Value) {
-		log.Errorf("response: %v", response.String())
 		if response.Integer() == 1 {
 			proxywasm.ResumeHttpRequest()
 		} else {
