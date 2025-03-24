@@ -108,12 +108,12 @@ func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterIPCountLim
 }
 
 func initConfigItems(json gjson.Result) ([]LimitConfigItem, error) {
-	limitKeys := json.Get("config_items")
+	limitKeys := json.Get("config")
 	if !limitKeys.Exists() {
-		return nil, errors.New("missing config_items in config")
+		return nil, errors.New("missing config in config")
 	}
 	if len(limitKeys.Array()) == 0 {
-		return nil, errors.New("config config_items cannot be empty")
+		return nil, errors.New("config cannot be empty")
 	}
 	var configItems []LimitConfigItem
 	for _, item := range limitKeys.Array() {
