@@ -19,12 +19,12 @@ description: 基于 IP 集群计数限流插件配置参考
 | 配置项                  | 类型   | 必填 | 默认值 | 说明                                                                          |
 | ----------------------- | ------ | ---- | ------ |-----------------------------------------------------------------------------|
 | rule_name               | string | 是 | - | 限流规则名称，根据限流规则名称 + 域名来拼装 redis key             |
-| config_items | array of object | 是   | -                 | 限流规则项，按照 config_items 下的排列顺序，匹配第一个 config_item 后命中限流规则，后续规则将被忽略                 |
+| rule_items | array of object | 是   | -                 | 限流规则项，按照 rule_items 下的排列顺序，匹配第一个 config_item 后命中限流规则，后续规则将被忽略                 |
 | rejected_code           | int | 否 | 403 | 请求被限流时，返回的 HTTP 状态码                                                         |
 | rejected_msg            | string | 否 | Too many ip count requests | 请求被限流时，返回的响应体                                                               |
 | redis                   | object          | 是                                                           | -                 | redis 相关配置                                                                  |
 
-`config_items` 中每一项的配置字段说明。
+`rule_items` 中每一项的配置字段说明。
 
 | 配置项                | 类型            | 必填                   | 默认值 | 说明                                                                                                                                                       |
 | --------------------- | --------------- |----------------------| ------ |----------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -51,7 +51,7 @@ description: 基于 IP 集群计数限流插件配置参考
 
 ```yaml
 rule_name: ip-count-limit
-config_items:
+rule_items:
   - key: "regexp:^api.*\.example\.com$"
     whitelist:
       - "api1.example.com"

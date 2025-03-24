@@ -19,12 +19,12 @@ Plugin Execution Priority: `20`
 | Configuration Item        | Type          | Required | Default Value | Description                                                                          |
 | ------------------------- | ------------- | -------- | ------------- | ------------------------------------------------------------------------------------ |
 | rule_name                 | string        | Yes      | -             | The name of the rate limiting rule. The Redis key is constructed using rule name + domain name |
-| config              | array of object | Yes    | -             | Rate limiting rule items. The first matching `config_item` based on the order under `config_items` will trigger the rate limiting, and subsequent rules will be ignored |
+| rule_items              | array of object | Yes    | -             | Rate limiting rule items. The first matching `rule_items` based on the order under `rule_items` will trigger the rate limiting, and subsequent rules will be ignored |
 | rejected_code             | int           | No       | 403           | HTTP status code returned when a request is rate limited                             |
 | rejected_msg              | string        | No       | Too many ip count requests | Response body returned when a request is rate limited                   |
 | redis                     | object        | Yes      | -             | Redis related configuration                                                          |
 
-Description of configuration fields for each item in `config`.
+Description of configuration fields for each item in `rule_items`.
 
 | Configuration Item        | Type            | Required                | Default Value | Description                                                                                                                                                       |
 | ------------------------- | --------------- | ----------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ Description of configuration fields for each item in `redis`.
 
 ```yaml
 rule_name: ip-count-limit
-config:
+rule_items:
   - key: "regexp:^api.*\.example\.com$"
     whitelist:
       - "api1.example.com"

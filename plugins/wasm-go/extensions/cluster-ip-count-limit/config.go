@@ -30,7 +30,7 @@ var timeWindows = map[string]int64{
 
 type ClusterIPCountLimitConfig struct {
 	ruleName     string            // 限流规则名称
-	configItems  []LimitConfigItem // 限流规则项
+	ruleItems    []LimitConfigItem // 限流规则项
 	rejectedCode uint32            // 当请求超过阈值被拒绝时,返回的HTTP状态码
 	rejectedMsg  string            // 当请求超过阈值被拒绝时,返回的响应体
 	redisClient  wrapper.RedisClient
@@ -90,7 +90,7 @@ func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterIPCountLim
 	if err != nil {
 		return err
 	}
-	config.configItems = configItems
+	config.ruleItems = configItems
 
 	rejectedCode := json.Get("rejected_code")
 	if rejectedCode.Exists() {
@@ -108,18 +108,18 @@ func parseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterIPCountLim
 }
 
 func initConfigItems(json gjson.Result) ([]LimitConfigItem, error) {
-	limitKeys := json.Get("config")
+	limitKeys := json.Get("rule_items")
 	if !limitKeys.Exists() {
-		return nil, errors.New("missing config in config")
+		return nil, errors.New("missing rule_items in config")
 	}
 	if len(limitKeys.Array()) == 0 {
-		return nil, errors.New("config cannot be empty")
+		return nil, errors.New("config rule_items cannot be empty")
 	}
 	var configItems []LimitConfigItem
 	for _, item := range limitKeys.Array() {
 		key := item.Get("key")
 		if !key.Exists() || key.String() == "" {
-			return nil, errors.New("config_items key is required")
+			return nil, errors.New("rule_items key is required")
 		}
 
 		var (

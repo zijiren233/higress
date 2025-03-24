@@ -62,7 +62,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitCon
 
 	// 2. 匹配域名规则
 	var matchedItem LimitConfigItem
-	for _, item := range config.configs {
+	for _, item := range config.ruleItems {
 		if item.regexp != nil && item.regexp.MatchString(host) ||
 			item.key == host {
 			matchedItem = item
