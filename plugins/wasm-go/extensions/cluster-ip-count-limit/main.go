@@ -85,6 +85,11 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitCon
 
 	// 5. 执行限流检查
 	err = config.redisClient.Eval(CheckIPLimitScript, 1, keys, args, func(response resp.Value) {
+		if err := response.Error(); err != nil {
+			log.Errorf("redis call failed: %v", err)
+			proxywasm.ResumeHttpRequest()
+			return
+		}
 		if response.Integer() == 1 {
 			proxywasm.ResumeHttpRequest()
 		} else {
