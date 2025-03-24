@@ -13,30 +13,27 @@ import (
 )
 
 const (
-	ClusterIPCountLimitFormat = "higress-cluster-ip-count-limit:%s:%s" // 规则名:域名
+	ClusterIPCountLimitFormat = "higress-cluster-ip-count-limit:%s:%s:%s" // 规则名:key:域名
 	CheckIPLimitScript        = `
 	local key = KEYS[1]
 	local ip = ARGV[1]
+	local maxCount = tonumber(ARGV[2])
 	local window = tonumber(ARGV[3])
 
-	local exists = redis.call("EXISTS", key)
-	if exists == 0 then
+	local count = redis.call("SCARD", key)
+	if count < maxCount then
 		redis.call("SADD", key, ip)
-		redis.call("EXPIRE", key, window)
+		if count == 0 {
+			redis.call("EXPIRE", key, window)
+		}
 		return 1
 	end
 
-	local maxCount = tonumber(ARGV[2])
 	local isMember = redis.call("SISMEMBER", key, ip)
 	if isMember == 1 then
 		return 1
 	end
 
-	local count = redis.call("SCARD", key)
-	if count < maxCount then
-		redis.call("SADD", key, ip)
-		return 1
-	end
 	return 0
 	`
 )
@@ -59,6 +56,7 @@ func parseConfig(json gjson.Result, config *ClusterIPCountLimitConfig, log log.L
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitConfig, log log.Log) types.Action {
 	// 1. 获取请求域名
 	host := ctx.Host()
+	log.Infof("host: %s", host)
 
 	// 2. 匹配域名规则
 	var matchedItem LimitConfigItem
@@ -87,7 +85,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitCon
 	}
 
 	// 4. 构建Redis参数
-	redisKey := fmt.Sprintf(ClusterIPCountLimitFormat, config.ruleName, host)
+	redisKey := fmt.Sprintf(ClusterIPCountLimitFormat, config.ruleName, matchedItem.key, host)
 	keys := []interface{}{redisKey}
 	args := []interface{}{realIP, matchedItem.count, matchedItem.timeWindow}
 
