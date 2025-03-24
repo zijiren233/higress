@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultRejectedCode uint32 = 403
+	DefaultRejectedCode uint32 = 429
 	DefaultRejectedMsg  string = "Too many ip count requests"
 
 	Second           int64 = 1
