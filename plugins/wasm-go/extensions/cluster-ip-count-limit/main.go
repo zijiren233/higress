@@ -56,7 +56,7 @@ func parseConfig(json gjson.Result, config *ClusterIPCountLimitConfig, log log.L
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitConfig, log log.Log) types.Action {
 	// 1. 获取请求域名
 	host := ctx.Host()
-	log.Infof("host: %s", host)
+	log.Errorf("host: %s", host)
 
 	// 2. 匹配域名规则
 	var matchedItem LimitConfigItem
@@ -78,6 +78,8 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ClusterIPCountLimitCon
 		log.Warnf("failed to get real IP: %v", err)
 		return types.ActionContinue
 	}
+
+	log.Errorf("realIP: %s", realIP)
 
 	if len(matchedItem.ipWhitelist) > 0 && IsIPInSubnets(realIP, matchedItem.ipWhitelist) {
 		log.Debugf("ip %s is in whitelist", realIP)
