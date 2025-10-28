@@ -202,7 +202,7 @@ func extractAllowFromURL(xFrameOptions string) string {
 		// Extract the URL part after "allow-from"
 		parts := strings.Fields(xFrameOptions) // Use original case for URL
 		if len(parts) >= 2 {
-			url := strings.TrimSpace(parts[1])
+			url := parts[1]
 			if url != "" {
 				return url
 			}
