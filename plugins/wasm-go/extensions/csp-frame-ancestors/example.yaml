@@ -1,0 +1,51 @@
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: csp-frame-ancestors
+  namespace: higress-system
+spec:
+  # 插件优先级，建议在认证插件之后执行
+  priority: 200
+
+  # 插件执行阶段
+  phase: AUTHN
+
+  # 全局默认配置
+  defaultConfig:
+    # Referer 匹配规则（支持正则表达式）
+    referer_patterns:
+      - "^https://example\\.com"
+      - "^https://www\\.example\\.com"
+      - "^https://.*\\.trusted\\.com"
+
+    # 允许嵌入的 frame-ancestors 值
+    frame_ancestors:
+      - "https://example.com"
+      - "https://www.example.com"
+      - "https://*.trusted.com"
+      - "'self'"
+
+  # 路由级配置示例
+  matchRules:
+    # 针对特定路由的配置
+    - ingress:
+        - default/my-app
+      config:
+        referer_patterns:
+          - "^https://partner\\.com"
+        frame_ancestors:
+          - "https://partner.com"
+
+    # 针对特定域名的配置
+    - domain:
+        - "api.example.com"
+      config:
+        referer_patterns:
+          - "^https://dashboard\\.example\\.com"
+        frame_ancestors:
+          - "https://dashboard.example.com"
+
+  # 插件镜像地址（开发阶段可以使用本地文件）
+  # 生产环境应使用 OCI 镜像地址
+  url: file:///opt/plugins/wasm-go/extensions/csp-frame-ancestors/plugin.wasm
+  # url: oci://your-registry.com/plugins/csp-frame-ancestors:1.0.0
