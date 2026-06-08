@@ -15,6 +15,7 @@
 package common
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/alibaba/higress/pkg/cert"
@@ -24,6 +25,7 @@ import (
 	"istio.io/istio/pkg/cluster"
 	"istio.io/istio/pkg/config"
 	gatewaytool "istio.io/istio/pkg/config/gateway"
+	"istio.io/istio/pkg/config/protocol"
 	listerv1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -75,6 +77,20 @@ func (w *WrapperGateway) IsHTTPS() bool {
 	return false
 }
 
+func CreateSSLPassthroughServer(host string, port uint32, clusterId cluster.ID) *networking.Server {
+	return &networking.Server{
+		Port: &networking.Port{
+			Number:   port,
+			Protocol: string(protocol.TLS),
+			Name:     CreateConvertedName("tls-"+strconv.FormatUint(uint64(port), 10)+"-ingress", clusterId.String()),
+		},
+		Hosts: []string{host},
+		Tls: &networking.ServerTLSSettings{
+			Mode: networking.ServerTLSSettings_PASSTHROUGH,
+		},
+	}
+}
+
 type WrapperHTTPRoute struct {
 	HTTPRoute        *networking.HTTPRoute
 	WrapperConfig    *WrapperConfig
@@ -106,6 +122,42 @@ type WrapperVirtualService struct {
 	WrapperConfig            *WrapperConfig
 	ConfiguredDefaultBackend bool
 	AppRoot                  string
+}
+
+func (w *WrapperVirtualService) HasTLSRouteForHost(host string) bool {
+	if w == nil || w.VirtualService == nil {
+		return false
+	}
+	for _, route := range w.VirtualService.Tls {
+		for _, match := range route.Match {
+			for _, sniHost := range match.SniHosts {
+				if sniHost == host {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func NewWrapperVirtualService(host string, wrapper *WrapperConfig) *WrapperVirtualService {
+	return &WrapperVirtualService{
+		VirtualService: &networking.VirtualService{
+			Hosts: []string{host},
+		},
+		WrapperConfig: wrapper,
+	}
+}
+
+func CreateTLSRoute(host string, routeDestination []*networking.RouteDestination) *networking.TLSRoute {
+	return &networking.TLSRoute{
+		Match: []*networking.TLSMatchAttributes{
+			{
+				SniHosts: []string{host},
+			},
+		},
+		Route: routeDestination,
+	}
 }
 
 type WrapperTrafficPolicy struct {
