@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alibaba/higress/v2/pkg/cert"
+	"github.com/alibaba/higress/pkg/cert"
 	"github.com/google/go-cmp/cmp"
 	"istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
