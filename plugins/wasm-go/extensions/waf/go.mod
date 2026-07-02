@@ -1,8 +1,6 @@
 module github.com/corazawaf/coraza-proxy-wasm
 
-go 1.24.1
-
-toolchain go1.24.4
+go 1.25.0
 
 require (
 	github.com/corazawaf/coraza-wasilibs v0.0.0-20230408002644-e2e3af21f503
@@ -26,6 +24,6 @@ require (
 	github.com/wasilibs/go-aho-corasick v0.3.0 // indirect
 	github.com/wasilibs/go-libinjection v0.2.1 // indirect
 	// indirect
-	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	rsc.io/binaryregexp v0.2.0 // indirect
 )
