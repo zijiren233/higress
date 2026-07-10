@@ -1,8 +1,6 @@
 module github.com/alibaba/higress/plugins/wasm-go/extensions/jwt-auth
 
-go 1.24.1
-
-toolchain go1.24.4
+go 1.25.0
 
 require (
 	github.com/go-jose/go-jose/v3 v3.0.3
@@ -21,6 +19,6 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/resp v0.1.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
